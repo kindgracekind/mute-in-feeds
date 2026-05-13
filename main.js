@@ -472,7 +472,9 @@ var MuteInFeedsPlugin = class extends Plugin {
     const addToggleItem = (menu, did, handle) => {
       const isMuted = this.mutedAccounts.has(did);
       menu.addItem(
-        (item) => item.setTitle(isMuted ? "Unmute account in feeds" : "Mute account in feeds").setIcon("lightning-bolt").onClick(async () => {
+        (item) => item.setTitle(
+          isMuted ? "Unmute account in feeds" : "Mute account in feeds"
+        ).setIcon("lightning-bolt").onClick(async () => {
           const wasMuted = this.mutedAccounts.has(did);
           if (wasMuted) {
             this.mutedAccounts.delete(did);
@@ -521,10 +523,14 @@ var MuteInFeedsPlugin = class extends Plugin {
   }
   async _persist() {
     await this.saveData({
-      accounts: [...this.mutedAccounts].map(([did, handle]) => ({ did, handle }))
+      accounts: [...this.mutedAccounts].map(([did, handle]) => ({
+        did,
+        handle
+      }))
     });
   }
 };
+MuteInFeedsPlugin.register();
 var MuteInFeedsSettingTab = class extends PluginSettingTab {
   constructor() {
     super();
@@ -548,14 +554,14 @@ var MuteInFeedsSettingTab = class extends PluginSettingTab {
             new Notice("Account unmuted in feeds", 3e3);
           } catch (error) {
             console.error(error);
-            new Notice("Failed to unmute account in feeds", 3e3).noticeEl.addClass("error");
+            new Notice(
+              "Failed to unmute account in feeds",
+              3e3
+            ).noticeEl.addClass("error");
           }
           this.refresh();
         })
       );
     }
   }
-};
-export {
-  MuteInFeedsPlugin as default
 };

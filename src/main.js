@@ -1,6 +1,6 @@
 import { Notice, Plugin, PluginSettingTab, Setting } from "./pluginWorker.js";
 
-export default class MuteInFeedsPlugin extends Plugin {
+class MuteInFeedsPlugin extends Plugin {
   async onload() {
     const saved = await this.loadData();
     this.mutedAccounts = new Map(
@@ -11,7 +11,9 @@ export default class MuteInFeedsPlugin extends Plugin {
       const isMuted = this.mutedAccounts.has(did);
       menu.addItem((item) =>
         item
-          .setTitle(isMuted ? "Unmute account in feeds" : "Mute account in feeds")
+          .setTitle(
+            isMuted ? "Unmute account in feeds" : "Mute account in feeds",
+          )
           .setIcon("lightning-bolt")
           .onClick(async () => {
             const wasMuted = this.mutedAccounts.has(did);
@@ -23,7 +25,9 @@ export default class MuteInFeedsPlugin extends Plugin {
             try {
               await this._persist();
               new Notice(
-                wasMuted ? "Account unmuted in feeds" : "Account muted in feeds",
+                wasMuted
+                  ? "Account unmuted in feeds"
+                  : "Account muted in feeds",
                 3000,
               );
             } catch (error) {
@@ -69,10 +73,15 @@ export default class MuteInFeedsPlugin extends Plugin {
 
   async _persist() {
     await this.saveData({
-      accounts: [...this.mutedAccounts].map(([did, handle]) => ({ did, handle })),
+      accounts: [...this.mutedAccounts].map(([did, handle]) => ({
+        did,
+        handle,
+      })),
     });
   }
 }
+
+MuteInFeedsPlugin.register();
 
 class MuteInFeedsSettingTab extends PluginSettingTab {
   constructor() {
@@ -102,7 +111,10 @@ class MuteInFeedsSettingTab extends PluginSettingTab {
               new Notice("Account unmuted in feeds", 3000);
             } catch (error) {
               console.error(error);
-              new Notice("Failed to unmute account in feeds", 3000).noticeEl.addClass("error");
+              new Notice(
+                "Failed to unmute account in feeds",
+                3000,
+              ).noticeEl.addClass("error");
             }
             this.refresh();
           }),
