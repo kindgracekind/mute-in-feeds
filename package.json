@@ -1,6 +1,6 @@
 {
   "name": "mute-in-feeds",
-  "version": "0.1.2",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "build": "esbuild src/main.js --bundle --format=esm --outfile=main.js",
