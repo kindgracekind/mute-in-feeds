@@ -4,7 +4,10 @@ class MuteInFeedsPlugin extends Plugin {
   async onload() {
     const saved = await this.loadData();
     this.mutedAccounts = new Map(
-      (saved?.accounts ?? []).map(({ did, handle }) => [did, handle]),
+      (saved?.accounts ?? []).map(({ did, handle, mutedAt }) => [
+        did,
+        { handle, mutedAt: mutedAt ?? null },
+      ]),
     );
 
     const addToggleItem = (menu, did, handle) => {
@@ -20,7 +23,10 @@ class MuteInFeedsPlugin extends Plugin {
             if (wasMuted) {
               this.mutedAccounts.delete(did);
             } else {
-              this.mutedAccounts.set(did, handle ?? null);
+              this.mutedAccounts.set(did, {
+                handle: handle ?? null,
+                mutedAt: new Date().toISOString(),
+              });
             }
             try {
               await this._persist();
@@ -59,7 +65,7 @@ class MuteInFeedsPlugin extends Plugin {
 
     this.addSettingTab(new MuteInFeedsSettingTab());
 
-    this.addFeedFilter("mute-in-feeds", (feedUri, feedItems) => {
+    this.addFeedFilter((feedUri, feedItems) => {
       const decisions = {};
       for (const feedItem of feedItems) {
         const did = feedItem?.post?.author?.did;
@@ -73,9 +79,10 @@ class MuteInFeedsPlugin extends Plugin {
 
   async _persist() {
     await this.saveData({
-      accounts: [...this.mutedAccounts].map(([did, handle]) => ({
+      accounts: [...this.mutedAccounts].map(([did, { handle, mutedAt }]) => ({
         did,
         handle,
+        mutedAt,
       })),
     });
   }
@@ -100,25 +107,35 @@ class MuteInFeedsSettingTab extends PluginSettingTab {
       return;
     }
 
-    for (const [did, handle] of this.plugin.mutedAccounts) {
-      new Setting(this.containerEl)
-        .setName(handle ? `@${handle}` : did)
-        .addButton((button) =>
-          button.setButtonText("Unmute").onClick(async () => {
-            this.plugin.mutedAccounts.delete(did);
-            try {
-              await this.plugin._persist();
-              new Notice("Account unmuted in feeds", 3000);
-            } catch (error) {
-              console.error(error);
-              new Notice(
-                "Failed to unmute account in feeds",
-                3000,
-              ).noticeEl.addClass("error");
-            }
-            this.refresh();
-          }),
-        );
+    const dateFormat = new Intl.DateTimeFormat(undefined, {
+      dateStyle: "short",
+    });
+    for (const [did, { handle, mutedAt }] of this.plugin.mutedAccounts) {
+      const setting = new Setting(this.containerEl).setName(
+        handle ? `@${handle}` : did,
+      );
+      if (mutedAt) {
+        const parsed = new Date(mutedAt);
+        if (!Number.isNaN(parsed.getTime())) {
+          setting.setDesc(`Muted ${dateFormat.format(parsed)}`);
+        }
+      }
+      setting.addButton((button) =>
+        button.setButtonText("Unmute").onClick(async () => {
+          this.plugin.mutedAccounts.delete(did);
+          try {
+            await this.plugin._persist();
+            new Notice("Account unmuted in feeds", 3000);
+          } catch (error) {
+            console.error(error);
+            new Notice(
+              "Failed to unmute account in feeds",
+              3000,
+            ).noticeEl.addClass("error");
+          }
+          this.refresh();
+        }),
+      );
     }
   }
 }
